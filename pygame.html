@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>SNEZHEVIKA COMBAT</title>
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #87CEFA;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  background-image: url('https://i.postimg.cc/L4WJNwYD/4f6e3fcf7628699813b19ae66c6625a9.jpg');
+  background-size: cover;
+  background-position: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+  cursor: default;
+}
+#score {
+  font-size: 24px;
+  margin-top: 20px;
+  color: #fff;
+  margin-bottom: 20px;
+  text-shadow: 1px 1px 2px #000;
+}
+#circle {
+  width: 80vw;
+  height: 80vw;
+  max-width: 300px; 
+  max-height: 300px;
+  background-color: black;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  position: relative; /* для искр */
+}
+#image {
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  object-fit: cover;
+  transition: transform 0.2s;
+  user-select: none;
+}
+@media(max-width: 400px){
+  #circle {
+    width: 70vw;
+    height: 70vw;
+  }
+  #score {
+    font-size: 30px;
+  }
+}
+#rebirthBtn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 18px;
+  background-color: #ffd700;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: none;
+  transition: background-color 0.3s;
+}
+#rebirthBtn:hover {
+  background-color: #ffcc00;
+}
+#shopBtn {
+  margin-top: 10px;
+  padding: 10px 20px;
+  font-size: 18px;
+  background-color: #4CAF50;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: none;
+  transition: background-color 0.3s;
+}
+#shopBtn:hover {
+  background-color: #00ff0d;
+}
+#shopContainer {
+  display: none;
+}
+
+.btn-primary {
+  background-color: rgba(255, 255, 0, 1);
+  margin-top: 2px;
+}
+
+@keyframes pulseBorder {
+  0% {
+    box-shadow: 0 0 10px 2px rgba(255, 255, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(255, 255, 0, 1);
+  }
+  100% {
+    box-shadow: 0 0 10px 2px rgba(255, 255, 0, 0.5);
+  }
+}
+
+#circle {
+  animation: pulseBorder 2s infinite ease-in-out;
+}
+
+@keyframes pulseBorder {
+  0% {
+    box-shadow: 0 0 10px 2px rgba(255, 255, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(255, 255, 0, 1);
+  }
+  100% {
+    box-shadow: 0 0 10px 2px rgba(255, 255, 0, 0.5);
+  }
+}
+
+/* стили для искр */
+.spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background-color: yellow;
+  border-radius: 50%;
+  opacity: 1;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+</style>
+</head>
+<body>
+
+<div id="shopContainer">
+  <button class="btn-primary" id="buy200">Купить +200 очков за 300000 очков</button><br>
+  <button class="btn-primary" id="buy250">Купить +250 очков за 350000 очков</button><br>
+  <button class="btn-primary" id="buy350">Купить +350 очков за 450000 очков</button>
+</div>
+
+<div id="score">Очки: 0</div>
+
+<div id="circle">
+  <img id="image" src="https://i.postimg.cc/QNmW7DTn/photo-2025-06-18-23-28-31.jpg" />
+</div>
+
+<button id="rebirthBtn">Переродиться</button>
+<button id="shopBtn">Магазин</button>
+
+<script>
+const image = document.getElementById('image');
+const circle = document.getElementById('circle');
+const scoreDisplay = document.getElementById('score');
+const rebirthBtn = document.getElementById('rebirthBtn');
+const shopBtn = document.getElementById('shopBtn');
+const shopContainer = document.getElementById('shopContainer');
+
+const images = [
+  'https://i.postimg.cc/QNmW7DTn/photo-2025-06-18-23-28-31.jpg',
+  'https://i.postimg.cc/PJSpnbHk/photo-2025-06-18-23-28-25.jpg',
+  'https://i.postimg.cc/xCRqLGcb/photo-2025-06-18-23-28-29.jpg',
+  'https://i.postimg.cc/HnknzJyv/photo-2025-06-18-23-28-34.jpg',
+  'https://i.postimg.cc/XNspJgRR/photo-2025-06-18-23-28-38.jpg',
+  'https://i.postimg.cc/fTkk09ZJ/photo-2025-06-18-23-28-41.jpg'
+];
+
+let points = 0;
+let currentImageIndex = 0;
+let pointsPerClick = 10;
+
+const savedPoints = localStorage.getItem('points');
+if (savedPoints !== null) {
+  points = parseInt(savedPoints, 10);
+  scoreDisplay.textContent = 'Очки: ' + points;
+}
+
+function updateImage() {
+  if (points >= 200000) {
+    currentImageIndex = 5;
+  } else if (points >= 150000 && points < 200000) {
+    currentImageIndex = 4;
+  } else if (points >= 100000 && points < 150000) {
+    currentImageIndex = 3;
+  } else if (points >= 50000 && points < 100000) {
+    currentImageIndex = 2;
+  } else if (points >= 5000 && points < 50000) {
+    currentImageIndex = 1;
+  } else {
+    currentImageIndex = 0;
+  }
+  image.src = images[currentImageIndex];
+}
+
+function savePoints() {
+  localStorage.setItem('points', points);
+}
+
+function checkRebirthAvailability() {
+  if (points >= 200000) {
+    rebirthBtn.style.display = 'block';
+    shopBtn.style.display = 'block';
+  } else {
+    rebirthBtn.style.display = 'none';
+    shopBtn.style.display = 'none';
+  }
+}
+
+function handleInteraction() {
+  points += pointsPerClick;
+  if (points >= 1000000) {
+    points = 10; 
+  }
+  scoreDisplay.textContent = 'Очки: ' + points;
+  savePoints();
+  image.style.transform = 'scale(0.9)';
+  setTimeout(() => {
+    image.style.transform = 'scale(1)';
+  }, 200);
+  updateImage();
+  checkRebirthAvailability();
+  createSparks(); // создаем искры при клике
+}
+
+// функция для создания искр
+function createSparks() {
+  const numberOfSparks = Math.floor(Math.random() * 3) + 2; // 2-4 искры
+  for (let i = 0; i < numberOfSparks; i++) {
+    const spark = document.createElement('div');
+    spark.className = 'spark';
+    // случайная позиция снизу круга
+    const rect = circle.getBoundingClientRect();
+    const x = Math.random() * rect.width;
+    const y = rect.height; // снизу
+    spark.style.left = x + 'px';
+    spark.style.top = y + 'px';
+
+    circle.appendChild(spark);
+
+    // случайный угол и дистанция для полета
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 50 + Math.random() * 50; // 50-100 px
+    const targetX = x + Math.cos(angle) * distance;
+    const targetY = y - Math.sin(angle) * distance;
+
+    // анимация полета искры
+    spark.animate([
+      { transform: `translate(0, 0)`, opacity: 1 },
+      { transform: `translate(${targetX - x}px, ${targetY - y}px)`, opacity: 0 }
+    ], {
+      duration: 700 + Math.random() * 300,
+      easing: 'ease-out'
+    }).onfinish = () => {
+      spark.remove();
+    };
+  }
+}
+
+circle.addEventListener('click', handleInteraction);
+circle.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  handleInteraction();
+});
+
+rebirthBtn.addEventListener('click', () => {
+  points = 10;
+  pointsPerClick = 100;
+  scoreDisplay.textContent = 'Очки: ' + points;
+  savePoints();
+  updateImage();
+  checkRebirthAvailability();
+});
+
+shopBtn.addEventListener('click', () => {
+  if (shopContainer.style.display === 'none') {
+    shopContainer.style.display = 'block';
+  } else {
+    shopContainer.style.display = 'none';
+  }
+});
+
+document.getElementById('buy200').addEventListener('click', () => {
+  if (points >= 300000) {
+    points += 200;
+    pointsPerClick = 200;
+    points -= 300000;
+    scoreDisplay.textContent = 'Очки: ' + points;
+    savePoints();
+    updateImage();
+    checkRebirthAvailability();
+  } else {
+    alert('Недостаточно очков!');
+  }
+});
+document.getElementById('buy250').addEventListener('click', () => {
+  if (points >= 350000) {
+    points += 250;
+    pointsPerClick = 250;
+    points -= 350000;
+    scoreDisplay.textContent = 'Очки: ' + points;
+    savePoints();
+    updateImage();
+    checkRebirthAvailability();
+  } else {
+    alert('Недостаточно очков!');
+  }
+});
+document.getElementById('buy350').addEventListener('click', () => {
+  if (points >= 450000) {
+    points += 350;
+    pointsPerClick = 350;
+    points -= 450000;
+    scoreDisplay.textContent = 'Очки: ' + points;
+    savePoints();
+    updateImage();
+    checkRebirthAvailability();
+  } else {
+    alert('Недостаточно очков!');
+  }
+});
+
+checkRebirthAvailability();
+
+updateImage();
+
+</script>
+
+</body>
+</html>
