@@ -1,0 +1,2 @@
+git rm
+git commit
